@@ -20,7 +20,7 @@ pub mod extra_policy;
 mod process_monitor;
 
 use anyhow::{Context, Result};
-use hashbrown::{hash_map::Entry, HashMap};
+use hashbrown::HashMap;
 #[cfg(debug_assertions)]
 use log::debug;
 use log::warn;

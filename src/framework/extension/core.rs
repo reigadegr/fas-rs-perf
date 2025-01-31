@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
-use hashbrown::{hash_map::Entry, HashMap};
+use hashbrown::HashMap;
 use inotify::{Inotify, WatchMask};
 use log::{debug, error, info};
 use mlua::Lua;

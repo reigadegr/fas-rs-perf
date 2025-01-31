@@ -1,7 +1,7 @@
 mod power_mode;
 
 use crate::framework::error::{Error, Result};
-use hashbrown::{hash_map::Entry, HashMap};
+use hashbrown::HashMap;
 use likely_stable::unlikely;
 pub use power_mode::Mode;
 use std::{
