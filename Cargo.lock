@@ -172,7 +172,7 @@ dependencies = [
 [[package]]
 name = "binder_ndk"
 version = "0.2.0"
-source = "git+https://github.com/reigadegr/binder_rs#9603d3dbe27c1c6741655aa1885427c8ca26ed78"
+source = "git+https://github.com/shadow3aaa/binder_rs#0588851cb41caac2df5da41390d1058eb6aa73c5"
 dependencies = [
  "binder_ndk_sys",
  "downcast-rs",
@@ -182,7 +182,7 @@ dependencies = [
 [[package]]
 name = "binder_ndk_sys"
 version = "0.2.0"
-source = "git+https://github.com/reigadegr/binder_rs#9603d3dbe27c1c6741655aa1885427c8ca26ed78"
+source = "git+https://github.com/shadow3aaa/binder_rs#0588851cb41caac2df5da41390d1058eb6aa73c5"
 dependencies = [
  "anyhow",
  "bindgen",
@@ -525,18 +525,18 @@ dependencies = [
 
 [[package]]
 name = "downcast-rs"
-version = "2.0.1"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea8a8b81cacc08888170eef4d13b775126db426d0b348bee9d18c2c1eaf123cf"
+checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 
 [[package]]
 name = "dumpsys-rs"
 version = "0.1.1"
-source = "git+https://github.com/reigadegr/dumpsys-rs#9a1012fa7f03f22220f9b10c069fc538152cc209"
+source = "git+https://github.com/shadow3aaa/dumpsys-rs#9d71b501f7c18846536f804edf258aa16062d779"
 dependencies = [
  "binder_ndk",
  "os_pipe",
- "thiserror 2.0.11",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -575,7 +575,6 @@ dependencies = [
  "dumpsys-rs",
  "flexi_logger",
  "frame-analyzer",
- "hashbrown 0.15.2",
  "inotify",
  "libc",
  "likely_stable",
@@ -614,12 +613,6 @@ dependencies = [
  "regex",
  "thiserror 2.0.11",
 ]
-
-[[package]]
-name = "foldhash"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
 
 [[package]]
 name = "frame-analyzer"
@@ -694,11 +687,6 @@ name = "hashbrown"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
-dependencies = [
- "allocator-api2",
- "equivalent",
- "foldhash",
-]
 
 [[package]]
 name = "heck"
