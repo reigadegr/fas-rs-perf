@@ -19,21 +19,20 @@ mod cpu_info;
 pub mod extra_policy;
 mod process_monitor;
 
+use anyhow::{Context, Result};
+use hashbrown::HashMap;
+#[cfg(debug_assertions)]
+use log::debug;
+use log::warn;
+use parking_lot::Mutex;
+use process_monitor::ProcessMonitor;
 use std::{
-    collections::HashMap,
     fs,
     path::Path,
     sync::{OnceLock, atomic::AtomicBool},
     thread,
     time::Duration,
 };
-
-use anyhow::{Context, Result};
-#[cfg(debug_assertions)]
-use log::debug;
-use log::warn;
-use parking_lot::Mutex;
-use process_monitor::ProcessMonitor;
 
 use crate::{
     Extension,

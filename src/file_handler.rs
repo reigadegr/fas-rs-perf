@@ -15,15 +15,14 @@
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
+use anyhow::Result;
+use hashbrown::{HashMap, hash_map::Entry};
 use std::{
-    collections::{HashMap, hash_map::Entry},
     fs::{File, set_permissions},
     io::{self, ErrorKind, prelude::*},
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
 };
-
-use anyhow::Result;
 use sys_mount::{UnmountFlags, unmount};
 
 #[derive(Debug)]
