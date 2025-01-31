@@ -9,6 +9,10 @@
 
 # idea
 /.idea
+<<<<<<< HEAD
 
 # Darwin
 /.DS_Store
+=======
+**/*.bak
+>>>>>>> d5eb84d (feat: 使用hashbrown替代std的hashmap)
