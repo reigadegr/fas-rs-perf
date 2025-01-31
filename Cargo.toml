@@ -43,9 +43,10 @@ sys-mount = { version = "3.0.1", default-features = false }
 quick-xml = { version = "0.37.2", features = ["serialize"] }
 mlua = { version = "0.10.3", features = ["luajit", "vendored", "error-send"] }
 frame-analyzer = "0.3.3"
-dumpsys-rs = { git = "https://github.com/shadow3aaa/dumpsys-rs" }
+dumpsys-rs = { git = "https://github.com/reigadegr/dumpsys-rs" }
 mimalloc = "0.1.43"
 num_cpus = "1.16.0"
+hashbrown = "0.15.2"
 
 [build-dependencies]
 anyhow = "1.0.96"
