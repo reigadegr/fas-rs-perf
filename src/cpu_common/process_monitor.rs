@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
+use anyhow::Result;
+use hashbrown::{hash_map::Entry, HashMap};
+use libc::{sysconf, _SC_CLK_TCK};
 use std::{
-    cmp,
-    collections::{hash_map::Entry, HashMap},
-    fs,
+    cmp, fs,
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc::{self, Receiver, Sender, SyncSender},
@@ -27,9 +28,6 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-
-use anyhow::Result;
-use libc::{sysconf, _SC_CLK_TCK};
 
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {

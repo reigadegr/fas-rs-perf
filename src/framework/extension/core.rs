@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, fs, path::PathBuf, sync::mpsc::Receiver, time::Duration};
-
+use hashbrown::{hash_map::Entry, HashMap};
 use inotify::{Inotify, WatchMask};
 use log::{debug, error, info};
 use mlua::Lua;
+use std::{fs, path::PathBuf, sync::mpsc::Receiver, time::Duration};
 
 use super::{
     api::{helper_funs, Api},
