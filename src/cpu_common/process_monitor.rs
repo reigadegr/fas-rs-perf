@@ -16,14 +16,14 @@
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
-use hashbrown::{HashMap, hash_map::Entry};
-use libc::{_SC_CLK_TCK, sysconf};
+use flume::{Receiver, Sender};
+use hashbrown::{hash_map::Entry, HashMap};
+use libc::{sysconf, _SC_CLK_TCK};
 use std::{
     cmp, fs,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc::{self, Receiver, Sender, SyncSender},
     },
     thread,
     time::{Duration, Instant},
@@ -61,15 +61,15 @@ impl UsageTracker {
 #[derive(Debug)]
 pub struct ProcessMonitor {
     stop: Arc<AtomicBool>,
-    sender: SyncSender<Option<i32>>,
+    sender: Sender<Option<i32>>,
     util_max: Receiver<f64>,
 }
 
 impl ProcessMonitor {
     pub fn new() -> Self {
-        let (sender, receiver) = mpsc::sync_channel(0);
+        let (sender, receiver) = flume::bounded(0);
         let stop = Arc::new(AtomicBool::new(false));
-        let (util_max_sender, util_max) = mpsc::channel();
+        let (util_max_sender, util_max) = flume::unbounded();
 
         {
             let stop = stop.clone();
