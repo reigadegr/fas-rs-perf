@@ -16,6 +16,7 @@
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
+use flume::{Receiver, Sender};
 use hashbrown::{HashMap, hash_map::Entry};
 use libc::{_SC_CLK_TCK, sysconf};
 use std::{
@@ -23,7 +24,6 @@ use std::{
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc::{self, Receiver, Sender, SyncSender},
     },
     thread,
     time::{Duration, Instant},
