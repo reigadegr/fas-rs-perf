@@ -148,7 +148,7 @@ fn monitor_thread(
                         })
                         .collect();
                     top_threads
-                        .sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(cmp::Ordering::Equal));
+                        .sort_unstable_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(cmp::Ordering::Equal));
                     top_threads.truncate(5);
                     top_trackers = top_threads
                         .into_iter()
