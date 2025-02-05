@@ -592,6 +592,7 @@ dependencies = [
  "mlua",
  "nix",
  "num_cpus",
+ "once_cell",
  "parking_lot",
  "quick-xml",
  "serde",
