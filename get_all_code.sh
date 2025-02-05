@@ -11,4 +11,4 @@ fi
     cat $i
     echo "\n--------------\n"
     done
-} > target/thread-opt_all_code.txt
+} > target/fas-rs_all_code.txt
