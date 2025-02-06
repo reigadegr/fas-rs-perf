@@ -18,8 +18,6 @@
 use anyhow::Result;
 use flume::{Receiver, Sender};
 use hashbrown::{hash_map::Entry, HashMap};
-use libc::{sysconf, _SC_CLK_TCK};
-use once_cell::sync::Lazy;
 use std::{
     cmp, fs,
     sync::{
@@ -30,38 +28,18 @@ use std::{
     time::{Duration, Instant},
 };
 
-static TICK_PER_SEC: Lazy<i64> = Lazy::new(|| unsafe { sysconf(_SC_CLK_TCK) });
-
-fn get_tick_per_sec() -> &'static i64 {
-    &TICK_PER_SEC
-}
-
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
-    pid: i32,
     tid: i32,
-    last_cputime: u64,
-    read_timer: Instant,
 }
 
 impl UsageTracker {
-    fn new(pid: i32, tid: i32) -> Result<Self> {
-        Ok(Self {
-            pid,
-            tid,
-            last_cputime: get_thread_cpu_time(pid, tid)?,
-            read_timer: Instant::now(),
-        })
+    const fn new(tid: i32) -> Self {
+        Self { tid }
     }
 
-    fn try_calculate(&mut self) -> Result<f64> {
-        let tick_per_sec = get_tick_per_sec();
-        let new_cputime = get_thread_cpu_time(self.pid, self.tid)?;
-        let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * *tick_per_sec as f64;
-        self.read_timer = Instant::now();
-        let cputime_slice = new_cputime - self.last_cputime;
-        self.last_cputime = new_cputime;
-        Ok(cputime_slice as f64 / elapsed_ticks)
+    fn try_calculate(self) -> u64 {
+        get_thread_cpu_time(self.tid)
     }
 }
 
@@ -69,7 +47,7 @@ impl UsageTracker {
 pub struct ProcessMonitor {
     stop: Arc<AtomicBool>,
     sender: Sender<Option<i32>>,
-    util_max: Receiver<f64>,
+    util_max: Receiver<u64>,
 }
 
 impl ProcessMonitor {
@@ -104,7 +82,7 @@ impl ProcessMonitor {
         self.stop.store(true, Ordering::Release);
     }
 
-    pub fn update_util_max(&self) -> Option<f64> {
+    pub fn update_util_max(&self) -> Option<u64> {
         self.util_max.try_iter().last()
     }
 }
@@ -118,7 +96,7 @@ impl Drop for ProcessMonitor {
 fn monitor_thread(
     stop: &Arc<AtomicBool>,
     receiver: &Receiver<Option<i32>>,
-    util_max: &Sender<f64>,
+    util_max: &Sender<u64>,
 ) {
     let mut current_pid = None;
     let mut last_full_update = Instant::now();
@@ -138,42 +116,41 @@ fn monitor_thread(
                     all_trackers = threads
                         .iter()
                         .copied()
-                        .filter_map(|tid| {
-                            Some((
+                        .map(|tid| {
+                            (
                                 tid,
                                 match all_trackers.entry(tid) {
                                     Entry::Occupied(o) => o.remove(),
-                                    Entry::Vacant(_) => UsageTracker::new(pid, tid).ok()?,
+                                    Entry::Vacant(_) => UsageTracker::new(tid),
                                 },
-                            ))
+                            )
                         })
                         .collect();
                     let mut top_threads: Vec<_> = all_trackers
                         .iter()
-                        .filter_map(|(tid, tracker)| {
-                            Some((*tid, tracker.clone().try_calculate().ok()?))
-                        })
+                        .map(|(tid, tracker)| (*tid, (*tracker).try_calculate()))
                         .collect();
+
                     top_threads.sort_unstable_by(|(_, a), (_, b)| {
                         b.partial_cmp(a).unwrap_or(cmp::Ordering::Equal)
                     });
                     top_threads.truncate(5);
                     top_trackers = top_threads
                         .into_iter()
-                        .filter_map(|(tid, _)| match top_trackers.entry(tid) {
-                            Entry::Occupied(o) => Some((tid, o.remove())),
-                            Entry::Vacant(_) => Some((tid, UsageTracker::new(pid, tid).ok()?)),
+                        .map(|(tid, _)| match top_trackers.entry(tid) {
+                            Entry::Occupied(o) => (tid, o.remove()),
+                            Entry::Vacant(_) => (tid, UsageTracker::new(tid)),
                         })
                         .collect();
+
                     last_full_update = Instant::now();
                 }
             }
 
-            let mut max_usage: f64 = 0.0;
+            let mut max_usage: u64 = 0;
             for tracker in top_trackers.values_mut() {
-                if let Ok(usage) = tracker.try_calculate() {
-                    max_usage = max_usage.max(usage);
-                }
+                let usage = tracker.try_calculate();
+                max_usage = max_usage.max(usage);
             }
 
             util_max.send(max_usage).unwrap();
@@ -194,11 +171,9 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
         .collect())
 }
 
-fn get_thread_cpu_time(pid: i32, tid: i32) -> Result<u64> {
-    let stat_path = format!("/proc/{pid}/task/{tid}/stat");
-    let stat_content = fs::read_to_string(stat_path)?;
+fn get_thread_cpu_time(tid: i32) -> u64 {
+    let stat_path = format!("/proc/{tid}/schedstat");
+    let stat_content = fs::read_to_string(stat_path).unwrap_or_else(|_| String::from("0"));
     let parts: Vec<&str> = stat_content.split_whitespace().collect();
-    let utime = parts[13].parse::<u64>().unwrap_or(0);
-    let stime = parts[14].parse::<u64>().unwrap_or(0);
-    Ok(utime + stime)
+    parts[0].parse::<u64>().unwrap_or(0)
 }
