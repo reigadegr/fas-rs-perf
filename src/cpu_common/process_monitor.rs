@@ -14,27 +14,14 @@
 //
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
-
-use anyhow::Result;
-use flume::{Receiver, Sender};
-use hashbrown::{HashMap, hash_map::Entry};
-use libc::{_SC_CLK_TCK, sysconf};
-use once_cell::sync::Lazy;
 use std::{
     cmp, fs,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
-    thread,
     time::{Duration, Instant},
 };
 
-static TICK_PER_SEC: Lazy<i64> = Lazy::new(|| unsafe { sysconf(_SC_CLK_TCK) });
-
-fn get_tick_per_sec() -> &'static i64 {
-    &TICK_PER_SEC
-}
+use anyhow::Result;
+use hashbrown::{HashMap, hash_map::Entry};
+use libc::{_SC_CLK_TCK, sysconf};
 
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
@@ -50,16 +37,16 @@ impl UsageTracker {
         Ok(Self {
             pid,
             tid,
-            last_cputime: get_thread_cpu_time(pid, tid)?,
+            last_cputime: get_thread_cpu_time(tid)?,
             read_timer: Instant::now(),
             current_usage: 0.0,
         })
     }
 
     fn try_calculate(&mut self) -> Result<f64> {
-        let tick_per_sec = get_tick_per_sec();
-        let new_cputime = get_thread_cpu_time(self.pid, self.tid)?;
-        let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * *tick_per_sec as f64;
+        let tick_per_sec = unsafe { sysconf(_SC_CLK_TCK) };
+        let new_cputime = get_thread_cpu_time(self.tid)?;
+        let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec as f64;
         self.read_timer = Instant::now();
         let cputime_slice = new_cputime - self.last_cputime;
         self.last_cputime = new_cputime;
@@ -172,11 +159,9 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
         .collect())
 }
 
-fn get_thread_cpu_time(pid: i32, tid: i32) -> Result<u64> {
-    let stat_path = format!("/proc/{pid}/task/{tid}/stat");
+fn get_thread_cpu_time(tid: i32) -> Result<u64> {
+    let stat_path = format!("/proc/{tid}/schedstat");
     let stat_content = fs::read_to_string(stat_path)?;
     let parts: Vec<&str> = stat_content.split_whitespace().collect();
-    let utime = parts[13].parse::<u64>().unwrap_or(0);
-    let stime = parts[14].parse::<u64>().unwrap_or(0);
-    Ok(utime + stime)
+    Ok(parts[0].parse::<u64>().unwrap_or(0))
 }
