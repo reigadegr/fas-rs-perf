@@ -19,14 +19,7 @@ mod cpu_info;
 pub mod extra_policy;
 mod process_monitor;
 
-use crate::{
-    Extension,
-    api::{trigger_init_cpu_freq, trigger_reset_cpu_freq},
-    file_handler::FileHandler,
-};
 use anyhow::{Context, Result};
-use cpu_info::Info;
-use extra_policy::ExtraPolicy;
 use hashbrown::HashMap;
 #[cfg(debug_assertions)]
 use log::debug;
@@ -44,6 +37,14 @@ use std::{
     thread,
     time::Duration,
 };
+
+use crate::{
+    Extension,
+    api::{trigger_init_cpu_freq, trigger_reset_cpu_freq},
+    file_handler::FileHandler,
+};
+use cpu_info::Info;
+use extra_policy::ExtraPolicy;
 
 pub static EXTRA_POLICY_MAP: OnceLock<HashMap<i32, Mutex<ExtraPolicy>>> = OnceLock::new();
 pub static IGNORE_MAP: OnceLock<HashMap<i32, AtomicBool>> = OnceLock::new();
