@@ -16,6 +16,7 @@
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
 use anyhow::Result;
+use atoi::atoi;
 use flume::{Receiver, Sender};
 use hashbrown::{hash_map::Entry, HashMap};
 use std::{
@@ -31,15 +32,27 @@ use std::{
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
     tid: i32,
+    last_cputime: u64,
+    read_timer: Instant,
 }
 
 impl UsageTracker {
-    const fn new(tid: i32) -> Self {
-        Self { tid }
+    fn new(tid: i32) -> Self {
+        Self {
+            tid,
+            last_cputime: get_thread_cpu_time(tid),
+            read_timer: Instant::now(),
+        }
     }
 
-    fn try_calculate(self) -> u64 {
-        get_thread_cpu_time(self.tid)
+    fn try_calculate(mut self) -> u64 {
+        let tick_per_sec = 1_000_000_000.0;
+        let new_cputime = get_thread_cpu_time(self.tid);
+        let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec;
+        self.read_timer = Instant::now();
+        let cputime_slice = new_cputime - self.last_cputime;
+        self.last_cputime = new_cputime;
+        (cputime_slice as f64 / elapsed_ticks) as u64
     }
 }
 
@@ -173,7 +186,8 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
 
 fn get_thread_cpu_time(tid: i32) -> u64 {
     let stat_path = format!("/proc/{tid}/schedstat");
-    let stat_content = fs::read_to_string(stat_path).unwrap_or_else(|_| String::from("0"));
-    let parts: Vec<&str> = stat_content.split_whitespace().collect();
-    parts[0].parse::<u64>().unwrap_or(0)
+    let stat_content = std::fs::read(stat_path).unwrap_or_else(|_| Vec::new());
+    let mut parts = stat_content.split(|b| *b == b' ');
+    let first_part = parts.next().unwrap_or_default();
+    atoi::<u64>(first_part).unwrap_or(0)
 }
