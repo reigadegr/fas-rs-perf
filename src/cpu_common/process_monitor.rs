@@ -103,7 +103,6 @@ impl ProcessMonitor {
                 util_max = util_max.max(usage);
             }
         }
-
         Some(util_max)
     }
 
