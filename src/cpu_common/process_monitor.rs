@@ -14,14 +14,14 @@
 //
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
+
+use anyhow::Result;
+use atoi::atoi;
+use hashbrown::{HashMap, hash_map::Entry};
 use std::{
     cmp, fs,
     time::{Duration, Instant},
 };
-
-use anyhow::Result;
-use hashbrown::{HashMap, hash_map::Entry};
-use libc::{_SC_CLK_TCK, sysconf};
 
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
@@ -44,14 +44,13 @@ impl UsageTracker {
     }
 
     fn try_calculate(&mut self) -> Result<f64> {
-        let tick_per_sec = unsafe { sysconf(_SC_CLK_TCK) };
+        let tick_per_sec = 1_000_000_000.0;
         let new_cputime = get_thread_cpu_time(self.tid)?;
-        let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec as f64;
+        let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec;
         self.read_timer = Instant::now();
         let cputime_slice = new_cputime - self.last_cputime;
         self.last_cputime = new_cputime;
-        self.current_usage = cputime_slice as f64 / elapsed_ticks;
-        Ok(self.current_usage)
+        Ok(cputime_slice as f64 / elapsed_ticks)
     }
 }
 
@@ -161,7 +160,8 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
 
 fn get_thread_cpu_time(tid: i32) -> Result<u64> {
     let stat_path = format!("/proc/{tid}/schedstat");
-    let stat_content = fs::read_to_string(stat_path)?;
-    let parts: Vec<&str> = stat_content.split_whitespace().collect();
-    Ok(parts[0].parse::<u64>().unwrap_or(0))
+    let stat_content = std::fs::read(stat_path)?;
+    let mut parts = stat_content.split(|b| *b == b' ');
+    let first_part = parts.next().unwrap_or_default();
+    Ok(atoi::<u64>(first_part).unwrap_or(0))
 }
