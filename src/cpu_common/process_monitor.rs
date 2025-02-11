@@ -45,7 +45,7 @@ impl UsageTracker {
         }
     }
 
-    fn try_calculate(mut self) -> u64 {
+    fn try_calculate(&mut self) -> u64 {
         let tick_per_sec = 1_000_000_000.0;
         let new_cputime = get_thread_cpu_time(self.tid);
         let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec;
@@ -140,7 +140,7 @@ fn monitor_thread(
                         })
                         .collect();
                     let mut top_threads: Vec<_> = all_trackers
-                        .iter()
+                        .iter_mut()
                         .map(|(tid, tracker)| (*tid, (*tracker).try_calculate()))
                         .collect();
 
