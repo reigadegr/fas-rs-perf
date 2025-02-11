@@ -45,14 +45,14 @@ impl UsageTracker {
         }
     }
 
-    fn try_calculate(&mut self) -> u64 {
+    fn try_calculate(&mut self) -> f64 {
         let tick_per_sec = 1_000_000_000.0;
         let new_cputime = get_thread_cpu_time(self.tid);
         let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec;
         self.read_timer = Instant::now();
         let cputime_slice = new_cputime - self.last_cputime;
         self.last_cputime = new_cputime;
-        (cputime_slice as f64 / elapsed_ticks) as u64
+        cputime_slice as f64 / elapsed_ticks
     }
 }
 
@@ -60,7 +60,7 @@ impl UsageTracker {
 pub struct ProcessMonitor {
     stop: Arc<AtomicBool>,
     sender: Sender<Option<i32>>,
-    util_max: Receiver<u64>,
+    util_max: Receiver<f64>,
 }
 
 impl ProcessMonitor {
@@ -95,7 +95,7 @@ impl ProcessMonitor {
         self.stop.store(true, Ordering::Release);
     }
 
-    pub fn update_util_max(&self) -> Option<u64> {
+    pub fn update_util_max(&self) -> Option<f64> {
         self.util_max.try_iter().last()
     }
 }
@@ -109,7 +109,7 @@ impl Drop for ProcessMonitor {
 fn monitor_thread(
     stop: &Arc<AtomicBool>,
     receiver: &Receiver<Option<i32>>,
-    util_max: &Sender<u64>,
+    util_max: &Sender<f64>,
 ) {
     let mut current_pid = None;
     let mut last_full_update = Instant::now();
@@ -160,7 +160,7 @@ fn monitor_thread(
                 }
             }
 
-            let mut max_usage: u64 = 0;
+            let mut max_usage: f64 = 0.0;
             for tracker in top_trackers.values_mut() {
                 let usage = tracker.try_calculate();
                 max_usage = max_usage.max(usage);
