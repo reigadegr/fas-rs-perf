@@ -179,7 +179,7 @@ impl Controller {
 
     fn update_util_max(&mut self) {
         if let Some(util_max) = self.process_monitor.update_util_max() {
-            self.util_max = Some(util_max as f64);
+            self.util_max = Some(util_max);
         }
     }
 
