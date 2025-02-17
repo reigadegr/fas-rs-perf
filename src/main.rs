@@ -33,16 +33,15 @@ mod misc;
 
 use std::{
     env, fs,
-    io::{self, prelude::*},
     process,
 };
 
 use framework::prelude::*;
 
 use anyhow::Result;
-use flexi_logger::{DeferredNow, LogSpecification, Logger, Record};
 use log::{error, warn};
 use mimalloc::MiMalloc;
+use tklog::{LEVEL, LOG};
 
 #[cfg(debug_assertions)]
 use log::debug;
@@ -80,16 +79,13 @@ fn main() -> Result<()> {
 }
 
 fn run<S: AsRef<str>>(std_path: S) -> Result<()> {
-    #[cfg(not(debug_assertions))]
-    let logger_spec = LogSpecification::info();
-
+    let logger = LOG;
     #[cfg(debug_assertions)]
-    let logger_spec = LogSpecification::debug();
-
-    Logger::with(logger_spec)
-        .log_to_stdout()
-        .format(log_format)
-        .start()?;
+    logger.set_level(LEVEL::Debug);
+    #[cfg(not(debug_assertions))]
+    logger.set_level(LEVEL::Info);
+    logger.set_formatter("[{time}] {level}: {message}\n");
+    logger.uselog();
 
     let std_path = std_path.as_ref();
 
@@ -108,13 +104,4 @@ fn run<S: AsRef<str>>(std_path: S) -> Result<()> {
         .start_run()?;
 
     Ok(())
-}
-
-fn log_format(
-    write: &mut dyn Write,
-    now: &mut DeferredNow,
-    record: &Record<'_>,
-) -> Result<(), io::Error> {
-    let time = now.format("%Y-%m-%d %H:%M:%S");
-    write!(write, "[{time}] {}: {}", record.level(), record.args())
 }
