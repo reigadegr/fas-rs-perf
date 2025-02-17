@@ -121,15 +121,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
-name = "atoi"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f28d99ec8bfea296261ca1af174f24225171fea9664ba9003cbebee704810528"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -590,7 +581,6 @@ name = "fas-rs"
 version = "4.7.0"
 dependencies = [
  "anyhow",
- "atoi",
  "dumpsys-rs",
  "flexi_logger",
  "frame-analyzer",
@@ -602,7 +592,6 @@ dependencies = [
  "mlua",
  "nix",
  "num_cpus",
- "once_cell",
  "parking_lot",
  "quick-xml",
  "serde",
