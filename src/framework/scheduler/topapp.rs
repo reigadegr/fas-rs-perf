@@ -19,6 +19,8 @@ use std::time::{Duration, Instant};
 
 use dumpsys_rs::Dumpsys;
 
+use inotify::{Inotify, WatchMask};
+
 const REFRESH_TIME: Duration = Duration::from_secs(1);
 
 #[derive(Default)]
@@ -54,10 +56,17 @@ pub struct TopAppsWatcher {
     windows_dumper: Dumpsys,
     cache: WindowsInfo,
     last_refresh: Instant,
+    inotify: Inotify,
 }
 
 impl TopAppsWatcher {
     pub fn new() -> Self {
+        let inotify = Inotify::init().unwrap();
+        inotify
+            .watches()
+            .add("/dev/input", WatchMask::ACCESS)
+            .unwrap();
+
         let windows_dumper = loop {
             match Dumpsys::new("window") {
                 Some(d) => break d,
@@ -69,6 +78,7 @@ impl TopAppsWatcher {
             windows_dumper,
             cache: WindowsInfo::default(),
             last_refresh: Instant::now(),
+            inotify,
         }
     }
 
@@ -82,6 +92,7 @@ impl TopAppsWatcher {
 
     fn cache(&mut self) -> &WindowsInfo {
         if self.last_refresh.elapsed() > REFRESH_TIME {
+            self.inotify.read_events_blocking(&mut [0; 1024]).unwrap();
             let dump = loop {
                 match self.windows_dumper.dump(&["visible-apps"]) {
                     Ok(dump) => break dump,
