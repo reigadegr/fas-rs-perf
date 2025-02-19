@@ -31,16 +31,12 @@ mod file_handler;
 mod framework;
 mod misc;
 
-use std::{
-    env, fs,
-    process,
-};
+use std::{env, fs, process};
 
 use framework::prelude::*;
 
 use anyhow::Result;
 use log::{error, warn};
-use mimalloc::MiMalloc;
 use tklog::{LEVEL, LOG};
 
 #[cfg(debug_assertions)]
@@ -50,7 +46,7 @@ use cpu_common::Controller;
 use misc::setprop;
 
 #[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 const USER_CONFIG: &str = "/sdcard/Android/fas-rs/games.toml";
 

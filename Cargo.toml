@@ -44,6 +44,7 @@ mlua = { version = "0.10.3", features = ["luajit", "vendored", "error-send"] }
 frame-analyzer = "0.3.3"
 mimalloc = "0.1.46"
 dumpsys-rs = { git = "https://github.com/reigadegr/dumpsys-rs" }
+mimalloc = { version = "0.1.46", features = ["local_dynamic_tls", "no_thp", "override"] }
 num_cpus = "1.16.0"
 nix = { version = "0.30.1", features = ["sched"] }
 hashbrown = "0.15.2"
