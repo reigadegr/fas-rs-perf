@@ -21,6 +21,7 @@ use flume::{Receiver, Sender};
 use hashbrown::{hash_map::Entry, HashMap};
 use std::{
     cmp, fs,
+    io::Read,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -186,8 +187,14 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
 
 fn get_thread_cpu_time(tid: i32) -> u64 {
     let stat_path = format!("/proc/{tid}/schedstat");
-    let stat_content = std::fs::read(stat_path).unwrap_or_else(|_| Vec::new());
-    let mut parts = stat_content.split(|b| *b == b' ');
+    let Ok(mut file) = fs::File::open(&stat_path) else {
+        return 0;
+    };
+    let mut temp_buffer = [0u8; 32];
+    let Ok(_) = file.read(&mut temp_buffer) else {
+        return 0;
+    };
+    let mut parts = temp_buffer.split(|&b| b == b' ');
     let first_part = parts.next().unwrap_or_default();
     atoi::<u64>(first_part).unwrap_or(0)
 }
