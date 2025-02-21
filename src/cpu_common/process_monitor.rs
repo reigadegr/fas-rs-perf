@@ -20,6 +20,12 @@ use atoi::atoi;
 use hashbrown::{HashMap, hash_map::Entry};
 use std::{
     cmp, fs,
+    io::Read,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    thread,
     time::{Duration, Instant},
 };
 
@@ -159,8 +165,10 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
 
 fn get_thread_cpu_time(tid: i32) -> Result<u64> {
     let stat_path = format!("/proc/{tid}/schedstat");
-    let stat_content = std::fs::read(stat_path)?;
-    let mut parts = stat_content.split(|b| *b == b' ');
+    let mut file = fs::File::open(&stat_path)?;
+    let mut temp_buffer = [0u8; 32];
+    let _ = file.read(&mut temp_buffer)?;
+    let mut parts = temp_buffer.split(|&b| b == b' ');
     let first_part = parts.next().unwrap_or_default();
     Ok(atoi::<u64>(first_part).unwrap_or(0))
 }
