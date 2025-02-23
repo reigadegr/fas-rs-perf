@@ -19,6 +19,8 @@ use std::{fs, path::PathBuf};
 
 use anyhow::Result;
 
+use stringzilla::sz;
+
 use crate::{framework::config::TemperatureThreshold, Config, Mode};
 
 pub struct Thermal {
@@ -36,9 +38,9 @@ impl Thermal {
             let Ok(device_type) = fs::read_to_string(device_type) else {
                 continue;
             };
-            if device_type.contains("cpu-")
-                || device_type.contains("soc_max")
-                || device_type.contains("mtktscpu")
+            if sz::find(&device_type, "cpu-").is_some()
+                || sz::find(&device_type, "soc_max").is_some()
+                || sz::find(&device_type, "mtktscpu").is_some()
             {
                 nodes.push(device.path().join("temp"));
             }
