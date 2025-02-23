@@ -21,7 +21,6 @@ use hashbrown::{HashMap, hash_map::Entry};
 use std::{
     cmp, fs,
     io::Read,
-    path::Path,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
