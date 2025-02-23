@@ -15,13 +15,28 @@
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{fs, path::Path};
+use std::{fs, io::Read};
+
+use stringzilla::sz;
 
 use crate::framework::Result;
 
 pub fn get_process_name(pid: i32) -> Result<String> {
-    let cmdline = Path::new("/proc").join(pid.to_string()).join("cmdline");
-    let cmdline = fs::read_to_string(cmdline)?;
-    let cmdline = cmdline.split(':').next().unwrap_or_default();
-    Ok(cmdline.trim_matches(['\0']).trim().to_string())
+    let cmdline = format!("/proc/{pid}/cmdline");
+    let mut cmdline = fs::File::open(cmdline)?;
+    let mut buffer = [0u8; 128];
+    let _ = cmdline.read(&mut buffer)?;
+
+    let pos = sz::find(buffer, b":");
+    if let Some(sub) = pos {
+        let buffer = &buffer[..sub];
+        let buffer = String::from_utf8_lossy(buffer).into();
+        return Ok(buffer);
+    }
+
+    let pos = sz::find(buffer, b"\0");
+    let buffer = pos.map_or(&buffer[..], |pos| &buffer[..pos]);
+
+    let buffer = String::from_utf8_lossy(buffer).into();
+    Ok(buffer)
 }
