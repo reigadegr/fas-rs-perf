@@ -22,6 +22,7 @@ use hashbrown::{hash_map::Entry, HashMap};
 use std::{
     cmp, fs,
     io::Read,
+    path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -29,6 +30,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+use stringzilla::sz;
 
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
@@ -187,14 +189,16 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
 
 fn get_thread_cpu_time(tid: i32) -> u64 {
     let stat_path = format!("/proc/{tid}/schedstat");
-    let Ok(mut file) = fs::File::open(&stat_path) else {
+    let Ok(mut file) = File::open(&stat_path) else {
         return 0;
     };
-    let mut temp_buffer = [0u8; 32];
-    let Ok(_) = file.read(&mut temp_buffer) else {
+    let mut buffer = [0u8; 32];
+    let Ok(_) = file.read(&mut buffer) else {
         return 0;
     };
-    let mut parts = temp_buffer.split(|&b| b == b' ');
-    let first_part = parts.next().unwrap_or_default();
-    atoi::<u64>(first_part).unwrap_or(0)
+
+    let pos = sz::find(buffer, b" ");
+    let buffer = pos.map_or(&buffer[..], |pos| &buffer[..pos]);
+
+    atoi::<u64>(buffer).unwrap_or(0)
 }
