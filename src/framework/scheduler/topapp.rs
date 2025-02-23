@@ -45,7 +45,7 @@ impl WindowsInfo {
 
     fn parse_top_app(dump: &str) -> Vec<i32> {
         dump.lines()
-            .filter(|l| l.contains("Session{"))
+            .filter(|l| sz::find(l, "Session{").is_some())
             .filter_map(|l| l.split_whitespace().nth(3))
             .filter_map(|s| s.split(':').next())
             .map(|p| p.trim().parse().unwrap())
