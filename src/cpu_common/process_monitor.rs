@@ -18,7 +18,7 @@
 use anyhow::Result;
 use atoi::atoi;
 use flume::{Receiver, Sender};
-use hashbrown::{hash_map::Entry, HashMap};
+use hashbrown::{HashMap, hash_map::Entry};
 use std::{
     cmp, fs,
     io::Read,

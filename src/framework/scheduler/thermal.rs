@@ -23,6 +23,8 @@ use log::debug;
 
 use crate::{Config, Mode, framework::config::TemperatureThreshold};
 
+use stringzilla::sz;
+
 pub struct Thermal {
     target_fps_offset: f64,
     core_temperature: u64,
@@ -38,9 +40,9 @@ impl Thermal {
             let Ok(device_type) = fs::read_to_string(device_type) else {
                 continue;
             };
-            if device_type.contains("cpu-")
-                || device_type.contains("soc_max")
-                || device_type.contains("mtktscpu")
+            if sz::find(&device_type, "cpu-").is_some()
+                || sz::find(&device_type, "soc_max").is_some()
+                || sz::find(&device_type, "mtktscpu").is_some()
             {
                 nodes.push(device.path().join("temp"));
             }
