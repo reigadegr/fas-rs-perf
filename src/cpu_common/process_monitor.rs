@@ -22,7 +22,6 @@ use hashbrown::{hash_map::Entry, HashMap};
 use std::{
     cmp, fs,
     io::Read,
-    path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -189,7 +188,7 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
 
 fn get_thread_cpu_time(tid: i32) -> u64 {
     let stat_path = format!("/proc/{tid}/schedstat");
-    let Ok(mut file) = File::open(&stat_path) else {
+    let Ok(mut file) = fs::File::open(&stat_path) else {
         return 0;
     };
     let mut buffer = [0u8; 32];
