@@ -80,15 +80,15 @@ fn get_normalized_last_frame(buffer: &Buffer, target_fps: f64) -> Duration {
 fn adjust_target_fps(target_fps: f64, controller_state: &mut ControllerState) -> f64 {
     if controller_state.usage_sample_timer.elapsed() >= Duration::from_secs(1) {
         controller_state.usage_sample_timer = Instant::now();
-        let util = controller_state.controller.util_max();
+        // let util = controller_state.controller.util_max();
 
-        if util <= 0.1 {
-            controller_state.target_fps_offset = 0.0;
-        } else if util <= 0.55 {
-            controller_state.target_fps_offset -= 0.1;
-        } else if util >= 0.65 {
-            controller_state.target_fps_offset += 0.1;
-        }
+        // if util <= 0.1 {
+            // controller_state.target_fps_offset = 0.0;
+        // } else if util <= 0.55 {
+            // controller_state.target_fps_offset -= 0.1;
+        // } else if util >= 0.65 {
+            // controller_state.target_fps_offset += 0.1;
+        // }
     }
 
     controller_state.target_fps_offset = controller_state.target_fps_offset.clamp(-3.0, 0.0);
