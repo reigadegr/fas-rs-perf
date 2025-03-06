@@ -158,6 +158,24 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
+=======
+name = "backtrace"
+version = "0.3.74"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d82cb332cdfaed17ae235a638438ac4d4839913cc2af585c3c6746e8f8bee1a"
+dependencies = [
+ "addr2line",
+ "cfg-if",
+ "libc",
+ "miniz_oxide",
+ "object",
+ "rustc-demangle",
+ "windows-targets",
+]
+
+[[package]]
+>>>>>>> 7fe2c5a (chore: 更新ebpf部分依赖依赖)
 name = "binder_ndk"
 version = "0.2.0"
 source = "git+https://github.com/shadow3aaa/binder_rs#0588851cb41caac2df5da41390d1058eb6aa73c5"
@@ -303,6 +321,10 @@ dependencies = [
  "android-tzdata",
  "iana-time-zone",
  "num-traits",
+<<<<<<< HEAD
+=======
+ "wasm-bindgen",
+>>>>>>> 7fe2c5a (chore: 更新ebpf部分依赖依赖)
  "windows-targets",
 ]
 
@@ -445,9 +467,15 @@ dependencies = [
 
 [[package]]
 name = "ctor"
+<<<<<<< HEAD
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e9666f4a9a948d4f1dff0c08a4512b0f7c86414b23960104c243c10d79f4c3"
+=======
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7747ac3a66a06f4ee6718686c8ea976d2d05fb30ada93ebd76b3f9aef97257c"
+>>>>>>> 7fe2c5a (chore: 更新ebpf部分依赖依赖)
 dependencies = [
  "ctor-proc-macro",
  "dtor",
@@ -539,6 +567,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7454e41ff9012c00d53cf7f475c5e3afa3b91b7c90568495495e8d9bf47a1055"
 
 [[package]]
+name = "dtor"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bf39a0bfd1f94d62ffdb2802a7e6244c0f34f6ebacf5d4c26547d08cd1d67a5"
+dependencies = [
+ "dtor-proc-macro",
+]
+
+[[package]]
+name = "dtor-proc-macro"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7454e41ff9012c00d53cf7f475c5e3afa3b91b7c90568495495e8d9bf47a1055"
+
+[[package]]
 name = "dumpsys-rs"
 version = "0.1.1"
 source = "git+https://github.com/shadow3aaa/dumpsys-rs#9d71b501f7c18846536f804edf258aa16062d779"
@@ -584,6 +627,10 @@ dependencies = [
  "dumpsys-rs",
  "flexi_logger",
  "frame-analyzer",
+<<<<<<< HEAD
+=======
+ "hashbrown",
+>>>>>>> 7fe2c5a (chore: 更新ebpf部分依赖依赖)
  "inotify",
  "libc",
  "likely_stable",
@@ -1488,6 +1535,53 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 
 [[package]]
+<<<<<<< HEAD
+=======
+name = "tklog"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7712822534ae94f7bf122243dbf9d6474f86a1c0a5d4cdaa36fd7bf074b61730"
+dependencies = [
+ "chrono",
+ "crossbeam-channel",
+ "flate2",
+ "log",
+ "once_cell",
+ "regex",
+ "tokio",
+]
+
+[[package]]
+name = "tokio"
+version = "1.43.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d61fa4ffa3de412bfea335c6ecff681de2b609ba3c77ef3e00e521813a9ed9e"
+dependencies = [
+ "backtrace",
+ "bytes",
+ "libc",
+ "mio",
+ "parking_lot",
+ "pin-project-lite",
+ "signal-hook-registry",
+ "socket2",
+ "tokio-macros",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+>>>>>>> 7fe2c5a (chore: 更新ebpf部分依赖依赖)
 name = "toml"
 version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
