@@ -21,11 +21,6 @@ use hashbrown::{HashMap, hash_map::Entry};
 use std::{
     cmp, fs,
     io::Read,
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
-    thread,
     time::{Duration, Instant},
 };
 use stringzilla::sz;
