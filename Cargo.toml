@@ -41,9 +41,13 @@ serde = { version = "1.0.218", features = ["derive"] }
 sys-mount = { version = "3.0.1", default-features = false }
 quick-xml = { version = "0.37.2", features = ["serialize"] }
 mlua = { version = "0.10.3", features = ["luajit", "vendored", "error-send"] }
-frame-analyzer = "0.3.3"
+frame-analyzer = { git = "https://github.com/reigadegr/frame-analyzer-ebpf" }
 dumpsys-rs = { git = "https://github.com/reigadegr/dumpsys-rs" }
-mimalloc = { version = "0.1.43", features = ["local_dynamic_tls", "no_thp", "override"] }
+mimalloc = { version = "0.1.43", features = [
+  "local_dynamic_tls",
+  "no_thp",
+  "override",
+] }
 num_cpus = "1.16.0"
 nix = { version = "0.29.0", features = ["sched"] }
 hashbrown = "0.15.2"
