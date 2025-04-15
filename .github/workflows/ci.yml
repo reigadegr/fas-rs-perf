@@ -56,7 +56,8 @@ jobs:
         run: |
           export ANDROID_NDK_HOME=$(realpath ~/ndk_temp)
           export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
-          cargo xtask build -r -v
+          export RUSTFLAGS="-C default-linker-libraries"
+          cargo xtask build -r -v || python3 ./make.py build --release --nightly -v
       - name: Cleanup
         run: rm -rf ~/ndk_temp
       - name: Prepare artifacts
