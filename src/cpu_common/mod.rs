@@ -225,28 +225,25 @@ impl Controller {
         self.cpu_infos
             .iter()
             .map(|cpu| {
-                (
-                    cpu.policy,
-                    if is_janked || self.util_max.is_none() {
-                        cur_fas_freq_max
-                            .saturating_add(control)
-                            .clamp(0, self.max_freq)
-                    } else {
-                        let util_tracking_sugg_freq =
-                            (cur_freq_max as f64 * self.util_max.unwrap() / 0.5) as isize; // min_util: 50%
+                let target = match self.util_max {
+                    None => cur_fas_freq_max
+                        .saturating_add(control)
+                        .clamp(0, self.max_freq),
+                    Some(util) => {
+                        let util_tracking_sugg_freq = (cur_freq_max as f64 * util / 0.5) as isize; // min_util: 50%
+
                         #[cfg(debug_assertions)]
                         debug!(
-                            "util: {}, cur_freq_max: {}, util_tracking_sugg_freq: {}",
-                            self.util_max.unwrap(),
-                            cur_freq_max,
-                            util_tracking_sugg_freq
+                            "util: {util}, cur_freq_max: {cur_freq_max}, util_tracking_sugg_freq: {util_tracking_sugg_freq}"
                         );
+
                         cur_fas_freq_max
                             .saturating_add(control)
                             .min(util_tracking_sugg_freq)
                             .clamp(0, self.max_freq)
-                    },
-                )
+                    }
+                };
+                (cpu.policy, target)
             })
             .collect()
     }
