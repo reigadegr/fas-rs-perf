@@ -28,7 +28,7 @@ use anyhow::{Result, anyhow};
 use atoi::atoi;
 use itoa::Buffer;
 use libc::{_SC_CLK_TCK, sysconf};
-use stringzilla::sz;
+use stringzilla::{stringzilla::StringZillableBinary, sz};
 
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
@@ -166,36 +166,33 @@ fn get_thread_ids(pid: i32) -> Result<Vec<i32>> {
         .collect())
 }
 
-pub fn get_proc_path<const N: usize>(id: i32, file: &[u8]) -> [u8; N] {
+pub fn get_stat_path<const N: usize>(pid: i32, tid: i32) -> [u8; N] {
+    // /proc/
     let mut buffer = [0u8; N];
     let prefix = b"/proc/";
     buffer[..prefix.len()].copy_from_slice(prefix);
 
+    // /proc/pid
     let mut itoa_buf = Buffer::new();
-    let id = itoa_buf.format(id).as_bytes();
+    let pid = itoa_buf.format(pid).as_bytes();
 
-    let id_length = id.len();
-    let start = prefix.len();
-    buffer[start..start + id_length].copy_from_slice(id);
+    let pid_length = pid.len();
+    let prefix_len = prefix.len();
+    buffer[prefix_len..prefix_len + pid_length].copy_from_slice(pid);
 
-    let suffix_start = start + id_length;
-    buffer[suffix_start..suffix_start + file.len()].copy_from_slice(file);
+    // /proc/pid/task/
+    let task_pos = prefix_len + pid_length;
+    let task_path = b"/task/";
+    buffer[task_pos..task_pos + task_path.len()].copy_from_slice(task_path);
 
-    buffer
-}
+    // /proc/pid/task/tid
+    let tid_pos = task_pos + task_path.len();
+    let tid = itoa_buf.format(tid).as_bytes();
+    buffer[tid_pos..tid_pos + tid.len()].copy_from_slice(tid);
 
-pub fn get_tid_stat_path<const N: usize>(id: i32, task_dir: &[u8]) -> [u8; N] {
-    let mut buffer = [0u8; N];
-    let end = sz::find(task_dir, b"\0").unwrap_or(task_dir.len());
-    buffer[..end].copy_from_slice(&task_dir[..end]);
-    buffer[end] = b'/';
-    let mut itoa_buf = Buffer::new();
-    let id = itoa_buf.format(id).as_bytes();
-
-    let id_length = id.len();
-    buffer[end + 1..end + 1 + id_length].copy_from_slice(id);
-    let suffix = b"/stat";
-    buffer[end + 1 + id_length..end + 1 + id_length + suffix.len()].copy_from_slice(suffix);
+    // /proc/pid/task/tid/stat
+    let stat_path = b"/stat";
+    buffer[tid_pos + tid.len()..tid_pos + tid.len() + stat_path.len()].copy_from_slice(stat_path);
     buffer
 }
 
@@ -214,10 +211,9 @@ pub fn read_to_byte<const N: usize>(file: &[u8]) -> Result<[u8; N]> {
 }
 
 fn get_thread_cpu_time(pid: i32, tid: i32) -> Result<u64> {
-    let task_dir = get_proc_path::<64>(pid, b"/task");
-    let stat_path = get_tid_stat_path::<64>(tid, &task_dir);
+    let stat_path = get_stat_path::<64>(pid, tid);
     let stat_content = read_to_byte::<1024>(&stat_path)?;
-    let mut iter = stat_content.split(|&c| c == b' ').filter(|s| !s.is_empty());
+    let mut iter = stat_content.sz_splits(b" ").filter(|s| !s.is_empty());
 
     let utime_bytes = iter.nth(13).unwrap_or(&[0u8]);
     let stime_bytes = iter.next().unwrap_or(&[0u8]);
