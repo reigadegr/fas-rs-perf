@@ -15,7 +15,13 @@
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{fs, path::PathBuf};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+    io::{Read, Seek, SeekFrom},
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 #[cfg(debug_assertions)]
@@ -23,10 +29,40 @@ use log::debug;
 
 use crate::{Config, Mode, framework::config::TemperatureThreshold};
 
+/// 文件描述符缓存
+#[derive(Debug)]
+struct FileCache {
+    files: HashMap<PathBuf, File>,
+}
+
+impl FileCache {
+    fn new() -> Self {
+        Self {
+            files: HashMap::new(),
+        }
+    }
+
+    fn read_with_cache(&mut self, path: &PathBuf) -> Result<String> {
+        if !self.files.contains_key(path) {
+            let file = File::open(path)?;
+            self.files.insert(path.clone(), file);
+        }
+
+        let file = self.files.get_mut(path).unwrap();
+        file.seek(SeekFrom::Start(0))?;
+
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+        Ok(content)
+    }
+}
+
 pub struct Thermal {
     target_fps_offset: f64,
     core_temperature: u64,
     nodes: Vec<PathBuf>,
+    file_cache: FileCache,
+    last_temp_update: Instant,
 }
 
 impl Thermal {
@@ -50,6 +86,8 @@ impl Thermal {
             target_fps_offset: 0.0,
             core_temperature: 0,
             nodes,
+            file_cache: FileCache::new(),
+            last_temp_update: Instant::now(),
         })
     }
 
@@ -59,7 +97,10 @@ impl Thermal {
             TemperatureThreshold::Temp(t) => t,
         };
 
-        self.temperature_update();
+        if self.last_temp_update.elapsed() >= Duration::from_secs(2) {
+            self.temperature_update();
+            self.last_temp_update = Instant::now();
+        }
 
         #[cfg(debug_assertions)]
         {
@@ -80,8 +121,8 @@ impl Thermal {
         self.core_temperature = self
             .nodes
             .iter()
-            .filter_map(|path| fs::read_to_string(path).ok())
-            .map(|temp| temp.trim().parse::<u64>().unwrap_or_default())
+            .filter_map(|path| self.file_cache.read_with_cache(path).ok())
+            .filter_map(|content| content.trim().parse::<u64>().ok())
             .max()
             .unwrap_or_default();
     }
