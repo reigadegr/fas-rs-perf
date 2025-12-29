@@ -14,12 +14,13 @@
 //
 // You should have received a copy of the GNU General Public License along
 // with fas-rs. If not, see <https://www.gnu.org/licenses/>.
+
 use std::{
     cmp,
     collections::{HashMap, hash_map::Entry},
     ffi::OsStr,
     fs::{self, File},
-    io::{ErrorKind, Read},
+    io::{ErrorKind, Read, Seek, SeekFrom},
     os::unix::ffi::OsStrExt,
     time::{Duration, Instant},
 };
@@ -29,6 +30,43 @@ use atoi::atoi;
 use itoa::Buffer;
 use libc::{_SC_CLK_TCK, sysconf};
 use stringzilla::{stringzilla::StringZillableBinary, sz};
+
+#[derive(Debug)]
+struct FileCache {
+    files: HashMap<[u8; 64], File>,
+}
+
+impl FileCache {
+    fn new() -> Self {
+        Self {
+            files: HashMap::new(),
+        }
+    }
+
+    fn read_with_cache<const N: usize>(&mut self, path: [u8; 64]) -> Result<[u8; N]> {
+        if let std::collections::hash_map::Entry::Vacant(e) = self.files.entry(path) {
+            let end = sz::find(path, b"\0").unwrap_or(path.len());
+            let path_str = &path[..end];
+            let path_str = OsStr::from_bytes(path_str);
+            let file = File::open(path_str).map_err(|e| anyhow!("Cannot open file: {e}"))?;
+            e.insert(file);
+        }
+
+        let file = self.files.get_mut(&path).unwrap();
+        file.seek(SeekFrom::Start(0))?;
+
+        let mut buffer = [0u8; N];
+        match file.read_exact(&mut buffer) {
+            Ok(()) => Ok(buffer),
+            Err(e) if e.kind() == ErrorKind::UnexpectedEof => Ok(buffer),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    fn clear(&mut self) {
+        self.files.clear();
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 struct UsageTracker {
@@ -50,9 +88,9 @@ impl UsageTracker {
         })
     }
 
-    fn try_calculate(&mut self) -> Result<f64> {
+    fn try_calculate(&mut self, file_cache: &mut FileCache) -> Result<f64> {
         let tick_per_sec = unsafe { sysconf(_SC_CLK_TCK) };
-        let new_cputime = get_thread_cpu_time(self.pid, self.tid)?;
+        let new_cputime = get_thread_cpu_time_with_cache(self.pid, self.tid, file_cache)?;
         let elapsed_ticks = self.read_timer.elapsed().as_secs_f64() * tick_per_sec as f64;
         self.read_timer = Instant::now();
         let cputime_slice = new_cputime - self.last_cputime;
@@ -69,6 +107,7 @@ pub struct ProcessMonitor {
     top_trackers: HashMap<i32, UsageTracker>,
     last_full_update: Instant,
     last_update: Instant,
+    file_cache: FileCache,
 }
 
 impl ProcessMonitor {
@@ -79,6 +118,7 @@ impl ProcessMonitor {
             top_trackers: HashMap::new(),
             last_full_update: Instant::now(),
             last_update: Instant::now(),
+            file_cache: FileCache::new(),
         }
     }
 
@@ -87,6 +127,7 @@ impl ProcessMonitor {
             self.current_pid = pid;
             self.all_trackers.clear();
             self.top_trackers.clear();
+            self.file_cache.clear();
             self.last_full_update = Instant::now();
             self.last_update = Instant::now();
         }
@@ -107,7 +148,7 @@ impl ProcessMonitor {
 
         let mut util_max: f64 = 0.0;
         for tracker in self.top_trackers.values_mut() {
-            if let Ok(usage) = tracker.try_calculate() {
+            if let Ok(usage) = tracker.try_calculate(&mut self.file_cache) {
                 util_max = util_max.max(usage);
             }
         }
@@ -134,7 +175,12 @@ impl ProcessMonitor {
             let mut top_threads: Vec<_> = self
                 .all_trackers
                 .iter()
-                .filter_map(|(tid, tracker)| Some((*tid, tracker.clone().try_calculate().ok()?)))
+                .filter_map(|(tid, tracker)| {
+                    Some((
+                        *tid,
+                        tracker.clone().try_calculate(&mut self.file_cache).ok()?,
+                    ))
+                })
                 .collect();
 
             top_threads.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(cmp::Ordering::Equal));
@@ -194,6 +240,19 @@ pub fn get_stat_path<const N: usize>(pid: i32, tid: i32) -> [u8; N] {
     let stat_path = b"/stat";
     buffer[tid_pos + tid.len()..tid_pos + tid.len() + stat_path.len()].copy_from_slice(stat_path);
     buffer
+}
+
+fn get_thread_cpu_time_with_cache(pid: i32, tid: i32, file_cache: &mut FileCache) -> Result<u64> {
+    let stat_path = get_stat_path::<64>(pid, tid);
+    let stat_content = file_cache.read_with_cache::<1024>(stat_path)?;
+    let mut iter = stat_content.sz_splits(b" ").filter(|s| !s.is_empty());
+
+    let utime_bytes = iter.nth(13).unwrap_or(&[0u8]);
+    let stime_bytes = iter.next().unwrap_or(&[0u8]);
+
+    let utime = atoi::<u64>(utime_bytes).unwrap_or(0);
+    let stime = atoi::<u64>(stime_bytes).unwrap_or(0);
+    Ok(utime + stime)
 }
 
 pub fn read_to_byte<const N: usize>(file: &[u8]) -> Result<[u8; N]> {
